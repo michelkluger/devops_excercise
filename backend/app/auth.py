@@ -5,6 +5,7 @@ Per-VM tenancy (where only assigned users can modify specific machines) is not
 implemented in this demo but would be the natural next step for production use.
 """
 
+import logging
 from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Annotated
@@ -12,6 +13,8 @@ from typing import Annotated
 from fastapi import Depends, Header, HTTPException
 
 from app.services.mock_data import ROLE_PERMISSIONS, SYSTEM_USERS
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -35,6 +38,7 @@ def get_current_user(
     for user in SYSTEM_USERS:
         if user["username"] == x_user:
             return CurrentUser(**user)
+    logger.warning("Authentication failed: unknown user '%s'", x_user)
     raise HTTPException(status_code=401, detail=f"Unknown user: {x_user}")
 
 
@@ -46,6 +50,7 @@ def _require(action: str) -> Callable[..., CurrentUser]:
 
     def check(user: UserDep) -> CurrentUser:
         if not user.has_permission(action):
+            logger.warning("Access denied: %s (%s) attempted '%s'", user.username, user.role, action)
             raise HTTPException(
                 status_code=403,
                 detail=f"User '{user.username}' ({user.role}) lacks '{action}' permission",

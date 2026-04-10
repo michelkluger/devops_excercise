@@ -1,9 +1,12 @@
 """Business logic for VM CRUD operations."""
 
 import contextlib
+import logging
 from datetime import UTC, datetime
 
 from sqlmodel import Session, select
+
+logger = logging.getLogger(__name__)
 
 from app.models import VM
 from app.schemas import VMCreate, VMFilterParams, VMUpdate
@@ -37,12 +40,14 @@ def create_vm(session: Session, data: VMCreate) -> VM:
     session.refresh(vm)
 
     _sync_to_search(vm)
+    logger.info("VM created: %s (cpu=%d, ram=%d, network=%s)", vm.name, vm.cpu, vm.ram, vm.network)
     return vm
 
 
 def update_vm(session: Session, vm: VM, data: VMUpdate) -> VM:
     """Update an existing VM and sync changes to the search index."""
     update_data = data.model_dump(exclude_unset=True, mode="json")
+    changed_fields = list(update_data.keys())
     for key, value in update_data.items():
         setattr(vm, key, value)
     vm.updated_at = datetime.now(UTC)
@@ -52,28 +57,33 @@ def update_vm(session: Session, vm: VM, data: VMUpdate) -> VM:
     session.refresh(vm)
 
     _sync_to_search(vm)
+    logger.info("VM updated: %s (fields: %s)", vm.name, ", ".join(changed_fields))
     return vm
 
 
 def set_status(session: Session, vm: VM, status: str) -> VM:
     """Change VM status and sync to search."""
+    old_status = vm.status
     vm.status = status
     vm.updated_at = datetime.now(UTC)
     session.add(vm)
     session.commit()
     session.refresh(vm)
     _sync_to_search(vm)
+    logger.info("VM status changed: %s (%s -> %s)", vm.name, old_status, status)
     return vm
 
 
 def delete_vm(session: Session, vm: VM) -> None:
     """Delete a VM and remove it from the search index."""
     vm_id = str(vm.id)
+    vm_name = vm.name
     session.delete(vm)
     session.commit()
 
     with contextlib.suppress(Exception):
         search.delete_vm_from_index(vm_id)
+    logger.info("VM deleted: %s (%s)", vm_name, vm_id)
 
 
 def _sync_to_search(vm: VM) -> None:

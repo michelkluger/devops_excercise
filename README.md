@@ -121,10 +121,21 @@ External dependencies are fully mocked:
 - **RPM Repository** — 100 real-world package names with randomly generated versions
 - **Virtualization layer** — No real VMs are created; CRUD operations persist to SQLite
 
+### Observability
+
+The backend includes structured logging for key events:
+- VM lifecycle (create, update, delete, status transitions)
+- Auth decisions (access denied, unknown user)
+- MeiliSearch connectivity (setup, fallback triggers)
+- Background provisioning (success, failure, skips)
+
+In production this would feed into a centralized logging stack (ELK/Loki) and an **event audit log** — a dedicated append-only table recording who did what to which VM and when, queryable for compliance and debugging.
+
 ### What I'd Add with More Time
 
-- Pagination (the API supports `limit`/`offset` via MeiliSearch, UI needs infinite scroll or page controls)
-- WebSocket updates for real-time VM status changes
-- Authentication / RBAC
+- **Event audit log** — persist every mutation (create, edit, delete, stop, start) with user, timestamp, and diff to a dedicated table, exposed via a `/api/vms/{id}/events` endpoint and a timeline view in the UI
+- **WebSocket updates** for real-time VM status changes instead of polling
+- **Per-VM tenancy** — only assigned users can modify specific machines (the data model already supports this via the users field)
 - Bulk operations (delete/start/stop multiple VMs)
 - E2E tests with Playwright
+- OpenTelemetry tracing for request-level observability
