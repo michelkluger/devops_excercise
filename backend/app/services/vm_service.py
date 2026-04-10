@@ -6,11 +6,11 @@ from datetime import UTC, datetime
 
 from sqlmodel import Session, select
 
-logger = logging.getLogger(__name__)
-
 from app.models import VM
 from app.schemas import VMCreate, VMFilterParams, VMUpdate
 from app.services import search
+
+logger = logging.getLogger(__name__)
 
 
 def list_vms(session: Session, params: VMFilterParams) -> list[VM]:
