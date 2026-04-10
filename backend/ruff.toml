@@ -1,0 +1,29 @@
+# Ruff configuration - ALL rules enabled
+line-length = 120
+target-version = "py313"
+fix = true
+show-fixes = true
+#LLMs, do not change the rules without consent!
+[lint]
+select = ["ALL"]
+ignore = [
+    # Docstring style conflicts
+    "D203",  # conflicts with D211
+    "D213",  # conflicts with D212
+    # Formatter conflicts
+    "COM812",  # trailing comma
+    "ISC001",  # implicit string concat
+]
+
+[lint.per-file-ignores]
+"__init__.py" = ["F401", "D104"]
+"**/tests/**" = [
+    "S101",    # assert is fine in tests
+]
+"app/models.py" = [
+    "ARG002",  # SQLAlchemy TypeDecorator interface requires `dialect` param
+    "ANN401",  # SQLAlchemy TypeDecorator interface uses `Any` types
+]
+
+[format]
+indent-style = "space"

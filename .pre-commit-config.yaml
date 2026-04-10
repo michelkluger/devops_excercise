@@ -1,0 +1,33 @@
+repos:
+  - repo: local
+    hooks:
+      - id: ruff-check
+        name: ruff check
+        entry: bash -c 'cd backend && uv run ruff check'
+        language: &system_language system
+        pass_filenames: &no_filenames false
+        files: &python_files ^backend/.*\.(py|pyi)$|^backend/pyproject\.toml$|^backend/uv\.lock$
+      - id: ruff-format
+        name: ruff format
+        entry: bash -c 'cd backend && uv run ruff format --check'
+        language: *system_language
+        pass_filenames: *no_filenames
+        files: *python_files
+      - id: ty-check
+        name: ty check
+        entry: bash -c 'cd backend && uv run ty check'
+        language: *system_language
+        pass_filenames: *no_filenames
+        files: *python_files
+      - id: frontend-lint
+        name: frontend lint
+        entry: bun run --cwd frontend lint
+        language: *system_language
+        pass_filenames: *no_filenames
+        files: &frontend_files ^frontend/.*\.(ts|tsx|js|jsx|mjs|json|css)$|^frontend/bun\.lock$
+      - id: frontend-build
+        name: frontend build
+        entry: bun run --cwd frontend build
+        language: *system_language
+        pass_filenames: *no_filenames
+        files: *frontend_files
